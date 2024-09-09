@@ -1,5 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.markerhub.mapper.BlogMapper">
+<mapper namespace="com.blog.sun.mapper.BlogMapper">
 
+<update id="saveOrUpdateBlog" parameterType="com.blog.sun.common.dao.BlogDao">
+    <choose>
+        <when test="exists(select 1 from blogs where id=#{id})">
+            update blogs
+            set title=#{title},
+            description=#{description},
+            content=#{content},
+            created=#{created},
+            status=#{status},
+            label=#{label},
+            user_id=#{userId}
+            where id=#{id}
+        </when>
+        <otherwise>
+            insert into blogs(title, description, content, created, status, label,user_id)
+            values(#{title}, #{description}, #{content}, #{created}, #{status}, #{label},#{userId})
+        </otherwise>
+    </choose>
+</update>
+
+
+    <select id="getBlogList" resultType="com.blog.sun.common.dao.BlogDao">
+        select * from blogs order by created desc ;
+    </select>
+    <select id="getBlogById" resultType="com.blog.sun.common.dao.BlogDao">
+        select * from blogs where id=#{blogId}
+    </select>
+    <select id="searchBlogsLikeTitleOrDescription" resultType="com.blog.sun.common.dao.BlogDao">
+        select *
+        from blogs
+        <if test="title != null and description != null">
+        where title like concat('%', #{keyword}, '%')
+           or description like concat('%', #{keyword}, '%')
+        </if>
+    </select>
+    <select id="queryByLabel" resultType="com.blog.sun.common.dao.BlogDao">
+        select * from blogs where label=#{label}
+    </select>
+    <select id="queryAllTags" resultType="list">
+        select distinct label from blogs
+    </select>
 </mapper>

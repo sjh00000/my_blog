@@ -11,9 +11,12 @@ mybatis-plus:
 markerhub:
   jwt:
     # 加密秘钥
-    secret: f4e2e52034348f86b67cde581c0f9eb5
-    # token有效时长，7天，单位秒
-    expire: 604800
+    access-secret: f4e2e52034348f86b67cde581c0f9eb5
+    refresh-secret: f4e2e53434348fs45b67cds81c0f9rt5
+    # token有效时长，3小时，单位秒
+    access-expire: 10800
+    # 刷新token有效时长，30天，单位秒
+    refresh-expire: 2592000
     header: Authorization
 shiro-redis:
   enabled: true
