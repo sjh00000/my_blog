@@ -41,6 +41,9 @@ public class AccountController {
     public Result accountLogin(@Validated @RequestBody LoginDto loginDto, HttpServletResponse response) {
         // 根据用户名查询并验证用户
         UserVo userVo = userService.loginByUserName(loginDto);
+        if(userVo==null){
+            return Result.fail("登录失败，请检查用户名密码是否正确或已经登录");
+        }
         // 生成JWT令牌，用于用户身份验证。
         String accessToken = jwtUtils.generateAccessToken(userVo.getId());
         String refreshToken = jwtUtils.generateRefreshToken(userVo.getId());
@@ -65,14 +68,14 @@ public class AccountController {
     @GetMapping("/account/logout")
     public Result accountLogout() {
         //登录后已经在profile中有了用户信息
-        log.debug("此时登录中的用户信息有{}", ShiroUtil.getProfile());
+        log.info("此时登录中的用户信息有{}", ShiroUtil.getProfile());
         userService.logoutById(ShiroUtil.getProfile().getId());
         return Result.succ(null);
     }
 
     @PostMapping("/account/refreshToken")
     public Result accountRefreshToken(HttpServletResponse response) {
-        log.debug("此时登录中的用户信息有{}", ShiroUtil.getProfile());
+        log.info("此时登录中的用户信息有{}", ShiroUtil.getProfile());
         //此时鉴权成功，重新获取新的accessToken
         Long userId = ShiroUtil.getProfile().getId();
         String accessToken = jwtUtils.generateAccessToken(userId);

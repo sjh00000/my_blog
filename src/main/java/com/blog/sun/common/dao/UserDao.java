@@ -19,13 +19,12 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@TableName("m_user")
+@TableName("users")
 public class UserDao implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     //用户id
-    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     //昵称

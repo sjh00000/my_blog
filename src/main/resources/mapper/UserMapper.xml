@@ -2,9 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.blog.sun.mapper.UserMapper">
 
-    <insert id="registerUser" parameterType="com.blog.sun.common.dao.UserDao">
-        insert into USERS (username, password, email, avatar, status, created)
-        values (#{username}, #{password}, #{email}, #{avatar}, #{status}, #{created})
+    <insert id="registerUser">
+        insert into USERS (username, password, email, avatar, status, created, id)
+        values (#{userDao.username}, #{userDao.password}, #{userDao.email}, #{userDao.avatar}, #{userDao.status},
+                #{userDao.created}, #{userDao.id})
     </insert>
 
     <update id="changeUserLoginState">
@@ -14,9 +15,13 @@
     </update>
 
     <select id="checkUserExist" resultType="com.blog.sun.common.dao.UserDao">
-        select * from USERS where username = #{username}
+        select *
+        from USERS
+        where username = #{username}
         union
-        select * from USERS where email = #{email}
+        select *
+        from USERS
+        where email = #{email}
     </select>
     <select id="getUserByUserName" resultType="com.blog.sun.common.dao.UserDao">
         select *
@@ -24,6 +29,8 @@
         WHERE username = #{username}
     </select>
     <select id="getUserByUserId" resultType="com.blog.sun.common.dao.UserDao">
-        select * from  users where id=#{userId}
+        select *
+        from users
+        where id = #{userId}
     </select>
 </mapper>

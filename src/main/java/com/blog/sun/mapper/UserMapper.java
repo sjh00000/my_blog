@@ -3,6 +3,9 @@ package com.blog.sun.mapper;
 import com.blog.sun.common.dao.UserDao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * <p>
@@ -14,13 +17,13 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface UserMapper extends BaseMapper<UserDao> {
-    void registerUser(UserDao userDao);
+    void registerUser(@Param("userDao")UserDao userDao);
 
-    UserDao checkUserExist(String username, String email);
+    List<UserDao> checkUserExist(@Param("username")String username, @Param("email")String email);
 
-    boolean changeUserLoginState(Long userId);
+    boolean changeUserLoginState(@Param("userId")Long userId);
 
-    UserDao getUserByUserName(String userName);
+    UserDao getUserByUserName(@Param("username")String userName);
 
-    UserDao getUserByUserId(Long userId);
+    UserDao getUserByUserId(@Param("userId")Long userId);
 }

@@ -8,7 +8,10 @@ spring:
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**Mapper.xml
-markerhub:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+sun-blog:
   jwt:
     # 加密秘钥
     access-secret: f4e2e52034348f86b67cde581c0f9eb5
@@ -18,8 +21,12 @@ markerhub:
     # 刷新token有效时长，30天，单位秒
     refresh-expire: 2592000
     header: Authorization
-shiro-redis:
-  enabled: true
-  redis-manager:
-    host: 127.0.0.1:6379
 
+#shiro-redis:
+#  enabled: true
+#  redis-manager:
+#    host: 127.0.0.1:6379
+
+wfg:
+  method: 1 # 1为雪花漂移算法，2为传统算法
+  worker-id: 1 # 机器码id

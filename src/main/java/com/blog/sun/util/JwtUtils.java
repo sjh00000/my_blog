@@ -19,16 +19,16 @@ import java.util.Objects;
 @Slf4j
 @Data
 @Component
-@ConfigurationProperties(prefix = "markerhub.jwt")
+@ConfigurationProperties(prefix = "sun-blog.jwt")
 public class JwtUtils {
-    @Value("markerhub.jwt.access-expire")
+    @Value("access-expire")
     private String accessSecret;
-    @Value("markerhub.jwt.refresh-expire")
+    @Value("refresh-expire")
     private String refreshSecret;
-    @Value("markerhub.jwt.access-expire")
-    private long accessExpire;
-    @Value("markerhub.jwt.refresh-expire")
-    private long refreshExpire;
+    @Value("access-expire")
+    private String accessExpire;
+    @Value("refresh-expire")
+    private String refreshExpire;
     private String header;
 
     /**
@@ -38,7 +38,7 @@ public class JwtUtils {
     public String generateAccessToken(long userId) {
         Date nowDate = new Date();
         //过期时间accessExpire* 1000
-        Date expireDate = new Date(nowDate.getTime() + accessExpire * 1000);
+        Date expireDate = new Date(nowDate.getTime() + Long.parseLong(accessExpire)* 1000);
 
         return Jwts.builder()
                 .setHeaderParam("typ", "JWT")           //设置jwt头部参数类型为 JWT
@@ -56,7 +56,7 @@ public class JwtUtils {
     public String generateRefreshToken(long userId) {
         Date nowDate = new Date();
         //过期时间refreshExpire* 1000
-        Date expireDate = new Date(nowDate.getTime() + refreshExpire * 1000);
+        Date expireDate = new Date(nowDate.getTime() + Long.parseLong(refreshExpire) * 1000);
 
         return Jwts.builder()
                 .setHeaderParam("typ", "JWT")           //设置jwt头部参数类型为 JWT

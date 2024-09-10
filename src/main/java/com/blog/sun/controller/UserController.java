@@ -1,13 +1,14 @@
 package com.blog.sun.controller;
 
 
-import com.blog.sun.common.dao.UserDao;
+import com.blog.sun.common.resp.Result;
 import com.blog.sun.common.vo.UserVo;
 import com.blog.sun.service.UserService;
-import com.blog.sun.common.resp.Result;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * @author sjh
@@ -24,7 +25,7 @@ public class UserController {
 
     /**
      * 获取用户信息接口。
-     * 该接口需要用户认证才能访问，通过查询ID为1的用户信息并返回给前端。
+     * 该接口需要用户认证才能访问
      */
     @RequiresAuthentication
     @GetMapping("/user/information")

@@ -56,8 +56,15 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
         if(blogDto.getId() != null) {
             blogDao = blogMapper.getBlogById(blogDto.getId());
             //查询用户是否是博客作者
-            log.info("博客已存在，作者是：{}", blogDao.getUserId());
-            Assert.isTrue(blogDao.getUserId().longValue() == ShiroUtil.getProfile().getId().longValue(), "没有权限编辑");
+            if(blogDao != null){
+                log.info("博客已存在，作者是：{}", blogDao.getUserId());
+                Assert.isTrue(blogDao.getUserId().longValue() == ShiroUtil.getProfile().getId().longValue(), "没有权限编辑");
+                BeanUtil.copyProperties(blogDto, blogDao, "id", "userId", "created");
+                blogMapper.updateBlog(blogDao);
+                return;
+            }else{
+                log.info("未找到对应id的博客");
+            }
         } else {
             blogDao = new BlogDao();
             blogDao.setUserId(ShiroUtil.getProfile().getId());
@@ -67,7 +74,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
 
         // 复制博客属性到临时对象，忽略特定属性以防止覆盖
         BeanUtil.copyProperties(blogDto, blogDao, "id", "userId", "created");
-        blogMapper.saveOrUpdateBlog(blogDao);
+        blogMapper.saveBlog(blogDao);
     }
 
     @Override

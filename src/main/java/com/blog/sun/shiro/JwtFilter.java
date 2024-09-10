@@ -3,6 +3,7 @@ package com.blog.sun.shiro;
 import cn.hutool.json.JSONUtil;
 import com.blog.sun.common.resp.Result;
 import com.blog.sun.util.JwtUtils;
+import com.blog.sun.util.ShiroUtil;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.AuthenticationException;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -42,8 +44,8 @@ public class JwtFilter extends AuthenticatingFilter {
         // 获取 token
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         String jwt = request.getHeader("Authorization");
-        String flag=request.getHeader("TokenType");
-        if(!StringUtils.hasLength(jwt)){
+        String flag = request.getHeader("TokenType");
+        if (!StringUtils.hasLength(jwt)) {
             return null;
         }
         return new JwtToken(jwt, flag);
@@ -53,17 +55,41 @@ public class JwtFilter extends AuthenticatingFilter {
     @Override
     protected boolean onAccessDenied(ServletRequest servletRequest, ServletResponse servletResponse) throws Exception {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
-        String token = request.getHeader("Authorization");
-        String flag=request.getHeader("TokenType");
-        log.info("JwtFilter token:{}", token);
-        if(!StringUtils.hasLength(token)) {
-            log.info("无token");
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        String accessToken = request.getHeader("Authorization");
+        Cookie[] cookies = request.getCookies();
+        String refreshToken = "";
+        //找到refreshToken
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    // 获取 refreshToken 的值
+                    refreshToken = cookie.getValue();
+                    log.info("refreshToken为: " + refreshToken);
+                    // 你可以在这里处理 refreshToken，例如验证或更新
+                    break; // 找到 refreshToken 后退出循环
+                }
+            }
+        }
+        log.info("JwtFilter accessToken:{}", accessToken);
+        if (!StringUtils.hasLength(accessToken)) {
             return true;
         } else {
             // 判断是否存在和已过期
-            Claims claim = jwtUtils.getClaimByToken(token,flag);
-            if(claim == null || jwtUtils.isTokenExpired(claim.getExpiration())) {
-                throw new ExpiredCredentialsException(Objects.equals(flag, "1")?"accessToken":"refreshToken"+"已失效，请重新登录！");
+            String flagAccessToken = "1";
+            Claims accessClaim = jwtUtils.getClaimByToken(accessToken, flagAccessToken);
+            String flagRefreshToken = "2";
+            Claims refreshClaim = jwtUtils.getClaimByToken(refreshToken, flagRefreshToken);
+            //accessToken已过期
+            if (accessClaim == null || jwtUtils.isTokenExpired(accessClaim.getExpiration())) {
+                //refreshToken未过期
+                if (refreshClaim!=null && !jwtUtils.isTokenExpired(refreshClaim.getExpiration())) {
+                    long userId = Long.parseLong(refreshClaim.getSubject());
+                    response.setHeader("Authorization", jwtUtils.generateAccessToken(userId));
+                }else{
+                    throw new ExpiredCredentialsException("token已失效，请重新登录！");
+                }
+
             }
         }
         // 执行身份验证
@@ -85,6 +111,7 @@ public class JwtFilter extends AuthenticatingFilter {
         }
         return false;
     }
+
     /**
      * 对跨域提供支持
      */

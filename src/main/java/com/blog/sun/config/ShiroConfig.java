@@ -40,18 +40,10 @@ public class ShiroConfig {
      * 安全管理器是Shiro安全框架的核心组件，负责处理认证、授权、会话管理和缓存等功能。
      */
     @Bean
-    public DefaultWebSecurityManager securityManager(AccountRealm accountRealm,
-                                                     SessionManager sessionManager,
-                                                     RedisCacheManager redisCacheManager) {
+    public DefaultWebSecurityManager securityManager(AccountRealm accountRealm
+                                                     ) {
         // 使用账户领域初始化安全管理器
-        DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager(accountRealm);
-
-        // 配置会话管理器以管理会话
-        securityManager.setSessionManager(sessionManager);
-
-        // 配置缓存管理器以缓存认证与授权信息
-        securityManager.setCacheManager(redisCacheManager);
-        return securityManager;
+        return new DefaultWebSecurityManager(accountRealm);
     }
 
 

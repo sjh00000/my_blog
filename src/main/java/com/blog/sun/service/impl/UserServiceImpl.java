@@ -9,13 +9,16 @@ import com.blog.sun.mapper.UserMapper;
 import com.blog.sun.service.UserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.blog.sun.util.JwtUtils;
+import com.hy.corecode.idgen.WFGIdGenerator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * <p>
@@ -33,6 +36,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
     UserMapper userMapper;
     @Autowired
     JwtUtils jwtUtils;
+    @Autowired
+    private WFGIdGenerator wFGIdGenerator;
 
     @Override
     public Integer registerUser(RegisterDto registerDto) {
@@ -43,10 +48,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
         userDao.setEmail(registerDto.getEmail());
         userDao.setCreated(LocalDateTime.now());
         //检查用户名，邮箱是否注册
-        if (userMapper.checkUserExist(userDao.getUsername(), userDao.getEmail()) != null) {
-            log.info("注册失败-用户或邮箱已存在");
+        List<UserDao> userDaoList =userMapper.checkUserExist(userDao.getUsername(), userDao.getEmail());
+        if (!userDaoList.isEmpty()) {
+            log.info("注册失败-用户名或邮箱已存在");
             return 1;
         }
+        //雪花算法生成唯一id
+        userDao.setId(wFGIdGenerator.next());
         //注册用户
         userMapper.registerUser(userDao);
         log.info("注册成功{}",userDao);
@@ -81,10 +89,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
     }
 
     @Override
-    public void logoutById(Long id) {
+    public void logoutById(Long userId) {
         // 清除认证信息以及缓存
         SecurityUtils.getSubject().logout();
-        userMapper.changeUserLoginState(id);
+        UserDao userDao =  userMapper.getUserByUserId(userId);
+        if(userDao.getStatus()==1){
+            userMapper.changeUserLoginState(userId);
+        }else{
+            log.info("用户未登录");
+        }
     }
 
     @Override

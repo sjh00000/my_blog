@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.sun.common.dao.BlogDao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.blog.sun.common.vo.BlogVo;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -18,15 +19,17 @@ import java.util.List;
  */
 public interface BlogMapper extends BaseMapper<BlogDao> {
 
-    IPage<BlogDao> getBlogList(Page<BlogVo> page);
+    IPage<BlogDao> getBlogList(@Param("page") Page<BlogVo> page);
 
-    BlogDao getBlogById(Long blogId);
+    BlogDao getBlogById(@Param("blogId")Long blogId);
 
-    void saveOrUpdateBlog(BlogDao blogDao);
+    void saveBlog(@Param("blogDao")BlogDao blogDao);
 
-    IPage<BlogDao> searchBlogsLikeTitleOrDescription(Page<BlogVo> page, String keyword);
+    void updateBlog(@Param("blogDao")BlogDao blogDao);
 
-    IPage<BlogDao> queryByLabel(Page<BlogVo> page, String label);
+    IPage<BlogDao> searchBlogsLikeTitleOrDescription(@Param("page")Page<BlogVo> page, @Param("keyword")String keyword);
+
+    IPage<BlogDao> queryByLabel(@Param("page")Page<BlogVo> page,@Param("label") String label);
 
     List<Object> queryAllTags();
 }

@@ -3,6 +3,7 @@ package com.blog.sun.common.exception;
 import com.blog.sun.common.resp.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.ShiroException;
+import org.apache.shiro.authc.ExpiredCredentialsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -24,20 +25,18 @@ public class GlobalExceptionHandler {
         return Result.fail(e.getMessage());
     }
 
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(value = ExpiredCredentialsException.class)
+    public Result handler(ExpiredCredentialsException e) {
+        log.error("token失效：----------------{}", e.getMessage());
+        return Result.fail(e.getMessage());
+    }
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public Result handler(MethodArgumentNotValidException e) {
         log.error("实体校验异常：----------------{}", e.getMessage());
-        BindingResult bindingResult = e.getBindingResult();
-        Optional<ObjectError> optionalObjectError = bindingResult.getAllErrors().stream().findFirst();
-
-        if (optionalObjectError.isPresent()) {
-            ObjectError objectError = optionalObjectError.get();
-            return Result.fail(objectError.getDefaultMessage());
-        } else {
-            // 如果没有错误，返回一个默认错误信息
-            return Result.fail("未知错误");
-        }
+        return Result.fail(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
