@@ -3,7 +3,6 @@ package com.blog.sun.shiro;
 import cn.hutool.json.JSONUtil;
 import com.blog.sun.common.resp.Result;
 import com.blog.sun.util.JwtUtils;
-import com.blog.sun.util.ShiroUtil;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.AuthenticationException;
@@ -22,7 +21,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Objects;
 
 
 /**

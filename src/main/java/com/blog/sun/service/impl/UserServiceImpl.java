@@ -1,17 +1,16 @@
 package com.blog.sun.service.impl;
 
 import cn.hutool.crypto.SecureUtil;
-import com.blog.sun.common.dto.LoginDto;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.blog.sun.common.dao.UserDao;
+import com.blog.sun.common.dto.LoginDto;
 import com.blog.sun.common.dto.RegisterDto;
 import com.blog.sun.common.vo.UserVo;
 import com.blog.sun.mapper.UserMapper;
 import com.blog.sun.service.UserService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.blog.sun.util.JwtUtils;
 import com.hy.corecode.idgen.WFGIdGenerator;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.User;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
