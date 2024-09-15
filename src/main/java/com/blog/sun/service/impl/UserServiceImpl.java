@@ -14,10 +14,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -37,7 +41,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
     JwtUtils jwtUtils;
     @Autowired
     private WFGIdGenerator wFGIdGenerator;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
+    private final String cacheUserInfoKey = "user:info";
+
+    @Transactional
     @Override
     public Integer registerUser(RegisterDto registerDto) {
         UserDao userDao = new UserDao();
@@ -45,9 +54,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
         userDao.setStatus(0);
         userDao.setPassword(SecureUtil.md5(registerDto.getPassword()));
         userDao.setEmail(registerDto.getEmail());
-        userDao.setCreated(LocalDateTime.now());
+        userDao.setCreated(Date.from(Instant.now()));
         //检查用户名，邮箱是否注册
-        List<UserDao> userDaoList =userMapper.checkUserExist(userDao.getUsername(), userDao.getEmail());
+        if (redisTemplate.opsForHash().hasKey(cacheUserInfoKey, userDao.getUsername())) {
+            log.info("注册失败-用户名或邮箱已存在");
+            return 1;
+        }
+        List<UserDao> userDaoList = userMapper.checkUserExist(userDao.getUsername(), userDao.getEmail());
         if (!userDaoList.isEmpty()) {
             log.info("注册失败-用户名或邮箱已存在");
             return 1;
@@ -56,54 +69,102 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
         userDao.setId(wFGIdGenerator.next());
         //注册用户
         userMapper.registerUser(userDao);
-        log.info("注册成功{}",userDao);
+        // 存储到Redis中过期时间1天
+        saveUserInfoToRedis(userDao);
+        redisTemplate.expire(cacheUserInfoKey, 1, TimeUnit.HOURS);
+        log.info("注册成功{}", userDao);
         return 0;
 
     }
 
     @Override
     public UserVo loginByUserName(LoginDto loginDto) {
-        UserDao userDao = userMapper.getUserByUserName(loginDto.getUsername());
+        String username = loginDto.getUsername();
+        UserDao userDao = getUserFromRedis(username);
+
         if (userDao == null) {
-            log.info("登录失败-未找到该用户");
-            return null;
+            log.info("Redis中未找到目标登录用户");
+            //在数据库中查找
+            userDao = userMapper.getUserByUserName(username);
+            if (userDao == null) {
+                log.info("登录失败-未找到目标登录用户");
+                return null;
+            } else {
+                log.info("数据库找到目标登录用户 {}", userDao);
+            }
         } else {
-            log.info("找到登录用户{}", userDao);
+            log.info("Redis中找到目标登录用户{}", userDao);
         }
+
         // 验证密码是否正确。如果密码不匹配，返回错误信息。
-        if(!userDao.getPassword().equals(SecureUtil.md5(loginDto.getPassword()))){
+        if (!userDao.getPassword().equals(SecureUtil.md5(loginDto.getPassword()))) {
             log.info("登录失败-用户密码错误");
             return null;
         }
-        //检验登录状态
-        if(userDao.getStatus()==1){
+
+        // 检验登录状态
+        if (userDao.getStatus() == 1) {
             log.info("登录失败-用户已经登录");
             return null;
-        }else{
+        } else {
+            //先删除缓存再更新数据库，防止缓存和数据库不一致
+            deleteBlogFromCache(username);
             userMapper.changeUserLoginState(userDao.getId());
+            userDao.setStatus(1);
         }
-        UserVo userVo= new UserVo();
-        BeanUtils.copyProperties(userDao,userVo);
+
+        UserVo userVo = new UserVo();
+        BeanUtils.copyProperties(userDao, userVo);
         return userVo;
     }
 
     @Override
-    public void logoutById(Long userId) {
+    public void logoutByName(String username) {
         // 清除认证信息以及缓存
         SecurityUtils.getSubject().logout();
-        UserDao userDao =  userMapper.getUserByUserId(userId);
-        if(userDao.getStatus()==1){
-            userMapper.changeUserLoginState(userId);
-        }else{
+        UserDao userDao = getUserFromRedis(username);
+        if (userDao == null) {
+            log.info("Redis中未找到目标用户");
+            userDao = userMapper.getUserByUserName(username);
+        } else {
+            log.info("Redis中找到目标用户{}", userDao);
+        }
+        if (userDao != null && userDao.getStatus() == 1) {
+            userMapper.changeUserLoginState(userDao.getId());
+            userDao.setStatus(0);
+            deleteBlogFromCache(username);
+            redisTemplate.expire(cacheUserInfoKey, 2, TimeUnit.DAYS);
+        } else {
             log.info("用户未登录");
         }
+
     }
 
     @Override
-    public UserVo getUserInformation(Long userId) {
-        UserDao userDao =  userMapper.getUserByUserId(userId);
+    public UserVo getUserInformation(String username) {
+        UserDao userDao = getUserFromRedis(username);
+        if (userDao == null) {
+            log.info("Redis中未找到目标用户");
+            userDao = userMapper.getUserByUserName(username);
+            saveUserInfoToRedis(userDao);
+            redisTemplate.expire(cacheUserInfoKey, 2, TimeUnit.DAYS);
+        } else {
+            log.info("Redis中找到目标用户{}", userDao);
+        }
         UserVo userVo = new UserVo();
-        BeanUtils.copyProperties(userDao,userVo);
-        return  userVo;
+        BeanUtils.copyProperties(userDao, userVo);
+        return userVo;
+    }
+
+    private UserDao getUserFromRedis(String username) {
+        return (UserDao) redisTemplate.opsForHash().get(cacheUserInfoKey, username);
+    }
+
+    private void saveUserInfoToRedis(UserDao userDao) {
+        redisTemplate.opsForHash().put(cacheUserInfoKey, userDao.getUsername(), userDao);
+    }
+
+    private void deleteBlogFromCache(String username) {
+        redisTemplate.opsForHash().delete(cacheUserInfoKey, username);
     }
 }

@@ -65,23 +65,23 @@ public class AccountController {
     }
 
     @RequiresAuthentication
-    @GetMapping("/account/logout")
+    @PostMapping("/account/logout")
     public Result accountLogout() {
         //登录后已经在profile中有了用户信息
         log.info("此时登录中的用户信息有{}", ShiroUtil.getProfile());
-        userService.logoutById(ShiroUtil.getProfile().getId());
+        userService.logoutByName(ShiroUtil.getProfile().getUsername());
         return Result.succ(null);
     }
 
-    @PostMapping("/account/refreshToken")
-    public Result accountRefreshToken(HttpServletResponse response) {
-        log.info("此时登录中的用户信息有{}", ShiroUtil.getProfile());
-        //此时鉴权成功，重新获取新的accessToken
-        Long userId = ShiroUtil.getProfile().getId();
-        String accessToken = jwtUtils.generateAccessToken(userId);
-        response.setHeader("Authorization", accessToken);
-        return Result.succ(null);
-    }
+//    @PostMapping("/account/refreshToken")
+//    public Result accountRefreshToken(HttpServletResponse response) {
+//        log.info("此时登录中的用户信息有{}", ShiroUtil.getProfile());
+//        //此时鉴权成功，重新获取新的accessToken
+//        Long userId = ShiroUtil.getProfile().getId();
+//        String accessToken = jwtUtils.generateAccessToken(userId);
+//        response.setHeader("Authorization", accessToken);
+//        return Result.succ(null);
+//    }
 
     @PostMapping("/account/register")
     public Result accountRegister(@Valid @RequestBody RegisterDto registerDto) {

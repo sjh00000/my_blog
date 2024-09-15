@@ -2,7 +2,7 @@ package com.blog.sun.common.dto;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 public class BlogDto {
@@ -16,7 +16,7 @@ public class BlogDto {
 
     private String content;
 
-    private LocalDateTime created;
+    private Date created;
 
     private Integer status;
 

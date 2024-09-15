@@ -2,7 +2,7 @@ package com.blog.sun.common.vo;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 public class UserVo {
@@ -11,5 +11,5 @@ public class UserVo {
     private String email;
     private String avatar;
     private Integer status;
-    private LocalDateTime created;
+    private Date created;
 }

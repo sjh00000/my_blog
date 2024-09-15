@@ -23,7 +23,7 @@ public interface BlogService extends IService<BlogDao> {
 
     BlogVo getBlogById(Long blogId);
 
-    void editBlogDetail(BlogDto blogDto);
+    Boolean editBlogDetail(BlogDto blogDto);
 
     IPage<BlogVo> searchBlogsLikeTitleOrContent(Page<BlogVo> page, String keyword);
 

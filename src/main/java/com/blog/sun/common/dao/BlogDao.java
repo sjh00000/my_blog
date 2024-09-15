@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 
 import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * <p>
@@ -43,7 +43,7 @@ public class BlogDao implements Serializable {
     private String content;
 
     @JsonFormat(pattern="yyyy-MM-dd")
-    private LocalDateTime created;
+    private Date created;
 
     private Integer status;
 

@@ -41,12 +41,19 @@ public class JwtFilter extends AuthenticatingFilter {
     protected AuthenticationToken createToken(ServletRequest servletRequest, ServletResponse servletResponse) {
         // 获取 token
         HttpServletRequest request = (HttpServletRequest) servletRequest;
-        String jwt = request.getHeader("Authorization");
-        String flag = request.getHeader("TokenType");
-        if (!StringUtils.hasLength(jwt)) {
-            return null;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        String jwt = "";
+        if (response.getHeader("Authorization") != null && !response.getHeader("Authorization").isEmpty()) {
+            jwt = response.getHeader("Authorization");
+            return new JwtToken(jwt, "1");
+        }else{
+            jwt = request.getHeader("Authorization");
+            if (!StringUtils.hasLength(jwt)) {
+                return null;
+            }else{
+                return new JwtToken(jwt, "1");
+            }
         }
-        return new JwtToken(jwt, flag);
     }
 
     //进行拦截校验
@@ -81,10 +88,11 @@ public class JwtFilter extends AuthenticatingFilter {
             //accessToken已过期
             if (accessClaim == null || jwtUtils.isTokenExpired(accessClaim.getExpiration())) {
                 //refreshToken未过期
-                if (refreshClaim!=null && !jwtUtils.isTokenExpired(refreshClaim.getExpiration())) {
+                if (refreshClaim != null && !jwtUtils.isTokenExpired(refreshClaim.getExpiration())) {
                     long userId = Long.parseLong(refreshClaim.getSubject());
+                    log.info("目前的accessToken已过期");
                     response.setHeader("Authorization", jwtUtils.generateAccessToken(userId));
-                }else{
+                } else {
                     throw new ExpiredCredentialsException("token已失效，请重新登录！");
                 }
 

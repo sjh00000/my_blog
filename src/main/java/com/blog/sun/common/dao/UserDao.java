@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * @author sjh
@@ -44,7 +44,7 @@ public class UserDao implements Serializable {
     private Integer status;
 
     //创建时间
-    private LocalDateTime created;
+    private Date created;
 
 
 }

@@ -59,8 +59,12 @@ public class BlogController {
     @RequiresAuthentication
     @PostMapping("/blog/edit")
     public Result editBlogDetail(@Validated @RequestBody BlogDto blogDto) {
-        blogService.editBlogDetail(blogDto);
-        return Result.succ(null);
+        Boolean result = blogService.editBlogDetail(blogDto);
+        if (result){
+            return Result.succ("编辑成功");
+        }else {
+            return Result.fail("编辑失败");
+        }
     }
 
     /**

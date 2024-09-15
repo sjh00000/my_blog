@@ -29,8 +29,8 @@ public class UserController {
      */
     @RequiresAuthentication
     @GetMapping("/user/information")
-    public Result getUserInformation(@RequestParam Long userId) {
-        UserVo userVo = userService.getUserInformation(userId);
+    public Result getUserInformation(@RequestParam String username) {
+        UserVo userVo = userService.getUserInformation(username);
         // 返回操作成功的结果，并附带用户信息
         return Result.succ(userVo);
     }

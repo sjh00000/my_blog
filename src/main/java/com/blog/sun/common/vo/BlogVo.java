@@ -2,7 +2,7 @@ package com.blog.sun.common.vo;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 public class BlogVo {
@@ -16,7 +16,7 @@ public class BlogVo {
 
     private String content;
 
-    private LocalDateTime created;
+    private Date created;
 
     private Integer status;
 

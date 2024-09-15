@@ -74,6 +74,7 @@ public class JwtUtils {
      * @return claim by token
      */
     public Claims getClaimByToken(String token,String flag) {
+        log.info("token:"+token+" "+"flag:"+flag);
         try {
             return Jwts.parser()
                     //flag--1 accessSecret  flag--2 refreshSecret
