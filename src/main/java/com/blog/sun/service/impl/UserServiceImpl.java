@@ -94,6 +94,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
             }
         } else {
             log.info("Redis中找到目标登录用户{}", userDao);
+            //先删除缓存再更新数据库，防止缓存和数据库不一致
+            deleteBlogFromCache(username);
         }
 
         // 验证密码是否正确。如果密码不匹配，返回错误信息。
@@ -107,10 +109,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
             log.info("登录失败-用户已经登录");
             return null;
         } else {
-            //先删除缓存再更新数据库，防止缓存和数据库不一致
-            deleteBlogFromCache(username);
             userMapper.changeUserLoginState(userDao.getId());
-            userDao.setStatus(1);
         }
 
         UserVo userVo = new UserVo();
@@ -128,12 +127,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
             userDao = userMapper.getUserByUserName(username);
         } else {
             log.info("Redis中找到目标用户{}", userDao);
+            //先删除缓存
+            deleteBlogFromCache(username);
         }
         if (userDao != null && userDao.getStatus() == 1) {
             userMapper.changeUserLoginState(userDao.getId());
-            userDao.setStatus(0);
-            deleteBlogFromCache(username);
-            redisTemplate.expire(cacheUserInfoKey, 2, TimeUnit.DAYS);
         } else {
             log.info("用户未登录");
         }
