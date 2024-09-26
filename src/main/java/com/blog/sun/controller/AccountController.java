@@ -8,10 +8,10 @@ import com.blog.sun.service.UserService;
 import com.blog.sun.util.JwtUtils;
 import com.blog.sun.util.ShiroUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authc.ExpiredCredentialsException;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,14 +23,11 @@ import javax.validation.Valid;
 @Slf4j
 @RestController
 public class AccountController {
-    private final UserService userService;
-    private final JwtUtils jwtUtils;
 
     @Autowired
-    public AccountController(UserService userService, JwtUtils jwtUtils) {
-        this.userService = userService;
-        this.jwtUtils = jwtUtils;
-    }
+    private UserService userService;
+    @Autowired
+    private  JwtUtils jwtUtils;
 
     /**
      * 处理用户登录请求。
@@ -39,6 +36,7 @@ public class AccountController {
      */
     @PostMapping("/account/login")
     public Result accountLogin(@Validated @RequestBody LoginDto loginDto, HttpServletResponse response) {
+        log.info("进入controller");
         // 根据用户名查询并验证用户
         UserVo userVo = userService.loginByUserName(loginDto);
         if(userVo==null){
@@ -67,9 +65,7 @@ public class AccountController {
     @RequiresAuthentication
     @PostMapping("/account/logout")
     public Result accountLogout() {
-        //登录后已经在profile中有了用户信息
-        log.info("此时登录中的用户信息有{}", ShiroUtil.getProfile());
-        userService.logoutByName(ShiroUtil.getProfile().getUsername());
+        userService.logoutByName();
         return Result.succ(null);
     }
 

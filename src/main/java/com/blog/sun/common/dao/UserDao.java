@@ -1,6 +1,7 @@
 package com.blog.sun.common.dao;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -44,6 +45,7 @@ public class UserDao implements Serializable {
     private Integer status;
 
     //创建时间
+    @JsonFormat(pattern="yyyy-MM-dd")
     private Date created;
 
 

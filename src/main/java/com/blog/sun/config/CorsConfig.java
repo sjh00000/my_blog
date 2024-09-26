@@ -1,5 +1,6 @@
 package com.blog.sun.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -8,6 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 解决跨域问题
  */
 @Configuration
+@Slf4j
 public class CorsConfig implements WebMvcConfigurer {
 
     /**
@@ -17,14 +19,16 @@ public class CorsConfig implements WebMvcConfigurer {
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+
+        log.info("跨域处理");
         // 添加对所有路径的CORS映射
         registry.addMapping("/**")
                 // 允许来自任何来源的请求
-                .allowedOrigins("*")
+                .allowedOriginPatterns("*")
                 // 允许请求使用的方法
                 .allowedMethods("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS")
-                // 不允许请求携带凭证（如cookies）
-                .allowCredentials(false)
+                // 允许请求携带凭证（如cookies）
+                .allowCredentials(true)
                 // 设置预检请求的缓存时间，单位为秒
                 .maxAge(3600)
                 // 允许所有请求头部

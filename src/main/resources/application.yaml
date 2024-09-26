@@ -10,11 +10,19 @@ spring:
     host: localhost
     port: 6379
     timeout: 5000ms
+  aop:
+    proxy-target-class: true
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**Mapper.xml
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    org.apache.ibatis: warn
+
+
 
 sun-blog:
   jwt:

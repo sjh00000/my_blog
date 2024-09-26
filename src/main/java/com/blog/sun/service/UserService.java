@@ -23,7 +23,7 @@ public interface UserService extends IService<UserDao> {
     UserVo loginByUserName(LoginDto loginDto);
 
     //退出登录
-    void logoutByName(String username);
+    void logoutByName();
 
     UserVo getUserInformation(String username);
 }

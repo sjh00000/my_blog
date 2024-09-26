@@ -3,9 +3,13 @@
 <mapper namespace="com.blog.sun.mapper.BlogMapper">
 
     <insert id="saveBlog">
-        insert into blogs(title, description, content, created, status, label,user_id)
-        values(#{blogDao.title}, #{blogDao.description}, #{blogDao.content}, #{blogDao.created}, #{blogDao.status},
-        #{blogDao.label},#{blogDao.userId})
+        insert into blogs(title, description, content, created, status, label, user_id)
+        values (#{blogDao.title}, #{blogDao.description}, #{blogDao.content}, #{blogDao.created}, #{blogDao.status},
+                #{blogDao.label}, #{blogDao.userId})
+    </insert>
+    <insert id="editComment">
+        insert into comments(content, parent_id, blog_id, user_id)
+        values (#{content}, #{parentId}, #{blogId}, #{userId})
     </insert>
 
     <update id="updateBlog">
@@ -22,21 +26,40 @@
 
 
     <select id="getBlogList" resultType="com.blog.sun.common.dao.BlogDao">
-        select * from blogs order by created desc
+        select id, user_id, title, description, created, label
+        from blogs
+        order by created desc
     </select>
     <select id="getBlogById" resultType="com.blog.sun.common.dao.BlogDao">
-        select * from blogs where id=#{blogId}
+        select *
+        from blogs
+        where id = #{blogId}
     </select>
     <select id="searchBlogsLikeTitleOrDescription" resultType="com.blog.sun.common.dao.BlogDao">
-        select *
+        select id, user_id, title, description, created, label
         from blogs
         where title like concat('%', #{keyword}, '%')
            or description like concat('%', #{keyword}, '%')
+        order by created desc
     </select>
     <select id="queryByLabel" resultType="com.blog.sun.common.dao.BlogDao">
-        select * from blogs where label=#{label}
+        select id, user_id, title, description, created, label
+        from blogs
+        <where>
+            <if test="label != '全部'">
+                label = #{label}
+            </if>
+        </where>
+        order by created desc
     </select>
-    <select id="queryAllTags" resultType="Object">
-        select distinct label from blogs
+    <select id="queryAllTags" resultType="String">
+        select '全部' from dual union  select label from tags
+    </select>
+    <select id="getCommentList" resultType="com.blog.sun.common.vo.CommentVo">
+        select username, avatar, content, created_at, parent_id
+        from comments
+                 left join users on comments.user_id = users.id
+        where blog_id = #{blogId}
+          and parent_id = #{parentId}
     </select>
 </mapper>

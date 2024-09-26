@@ -21,7 +21,6 @@ public interface UserMapper extends BaseMapper<UserDao> {
 
     List<UserDao> checkUserExist(@Param("username")String username, @Param("email")String email);
 
-    boolean changeUserLoginState(@Param("userId")Long userId);
 
     UserDao getUserByUserName(@Param("username")String userName);
 

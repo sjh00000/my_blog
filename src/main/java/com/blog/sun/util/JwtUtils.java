@@ -1,10 +1,11 @@
 package com.blog.sun.util;
-
+import com.blog.sun.annotation.HandleFrontMvcException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authc.ExpiredCredentialsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -73,6 +74,7 @@ public class JwtUtils {
      * @param token the token
      * @return claim by token
      */
+    @HandleFrontMvcException
     public Claims getClaimByToken(String token,String flag) {
         log.info("token:"+token+" "+"flag:"+flag);
         try {
@@ -82,8 +84,8 @@ public class JwtUtils {
                     .parseClaimsJws(token)
                     .getBody();
         }catch (Exception e){
-            log.info("解析token失败 ：", e);
-            return null;
+            log.info("解析token失败 ：");
+            throw new ExpiredCredentialsException("token已失效，请重新登录！");
         }
     }
 

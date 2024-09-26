@@ -104,13 +104,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
             return null;
         }
 
-        // 检验登录状态
-        if (userDao.getStatus() == 1) {
-            log.info("登录失败-用户已经登录");
-            return null;
-        } else {
-            userMapper.changeUserLoginState(userDao.getId());
-        }
 
         UserVo userVo = new UserVo();
         BeanUtils.copyProperties(userDao, userVo);
@@ -118,23 +111,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDao> implements
     }
 
     @Override
-    public void logoutByName(String username) {
+    public void logoutByName() {
         // 清除认证信息以及缓存
         SecurityUtils.getSubject().logout();
-        UserDao userDao = getUserFromRedis(username);
-        if (userDao == null) {
-            log.info("Redis中未找到目标用户");
-            userDao = userMapper.getUserByUserName(username);
-        } else {
-            log.info("Redis中找到目标用户{}", userDao);
-            //先删除缓存
-            deleteBlogFromCache(username);
-        }
-        if (userDao != null && userDao.getStatus() == 1) {
-            userMapper.changeUserLoginState(userDao.getId());
-        } else {
-            log.info("用户未登录");
-        }
 
     }
 

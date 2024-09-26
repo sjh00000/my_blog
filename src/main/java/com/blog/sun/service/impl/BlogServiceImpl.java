@@ -5,8 +5,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.blog.sun.common.dao.BlogDao;
+import com.blog.sun.common.dao.CommentDao;
 import com.blog.sun.common.dto.BlogDto;
+import com.blog.sun.common.dto.CommentDto;
 import com.blog.sun.common.vo.BlogVo;
+import com.blog.sun.common.vo.CommentVo;
 import com.blog.sun.mapper.BlogMapper;
 import com.blog.sun.service.BlogService;
 import com.blog.sun.util.ShiroUtil;
@@ -21,6 +24,7 @@ import org.springframework.util.CollectionUtils;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <p>
@@ -42,42 +46,26 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
 
     private final String cacheBlogInfoKey = "blog:info";
 
-    private final String cacheBlogListKey = "blog:list";
+//    private final String cacheBlogListKey = "blog:list";
 
     @Override
     public IPage<BlogVo> getBlogList(Page<BlogVo> page) {
-        // 尝试从 Redis 缓存中获取数据
-        long start = (page.getCurrent() - 1) * page.getSize();
-        long end = start + page.getSize() - 1;
+        // 如果缓存中没有数据，则从数据库查询数据
+        log.info("Redis中未找到博客列表");
+        IPage<BlogDao> blogDaoIPage = blogMapper.getBlogList(page);
+        IPage<BlogVo> blogVoIPage = new Page<>();
+        BeanUtils.copyProperties(blogDaoIPage, blogVoIPage);
 
-        List<Object> cacheBlogList = redisTemplate.opsForList().range(cacheBlogListKey, start, end);
-
-        if (!CollectionUtils.isEmpty(cacheBlogList)) {
-            // 如果缓存中有数据，则转换为 IPage<BlogDao> 类型
-            log.info("Redis中找到博客列表");
-            IPage<Object> cachedBlogPage = convertListToPage(cacheBlogList, page);
-            IPage<BlogVo> blogVoIPage = new Page<>();
-            BeanUtils.copyProperties(cachedBlogPage, blogVoIPage);
-            return blogVoIPage;
-        } else {
-            // 如果缓存中没有数据，则从数据库查询数据
-            log.info("Redis中未找到博客列表");
-            IPage<BlogDao> blogDaoIPage = blogMapper.getBlogList(page);
-            IPage<BlogVo> blogVoIPage = new Page<>();
-            BeanUtils.copyProperties(blogDaoIPage, blogVoIPage);
-
-            // 将查询结果保存到缓存中
-            log.info("当前记录为{}", blogDaoIPage.getRecords());
-            saveBlogListToCache(blogDaoIPage.getRecords());
-
-            return blogVoIPage;
-        }
+        // 将查询结果保存到缓存中
+        log.info("当前记录为{}", blogDaoIPage.getRecords());
+        return blogVoIPage;
     }
 
     @Override
     public BlogVo getBlogById(Long blogId) {
+        log.info("进入service");
         // 尝试从 Redis 缓存中获取博客信息
-        Object cachedBlog = redisTemplate.opsForHash().get(cacheBlogInfoKey, blogId);
+        Object cachedBlog = redisTemplate.opsForHash().get(cacheBlogInfoKey, blogId.toString());
 
         if (cachedBlog != null) {
             // 如果缓存中有数据，则直接返回转换后的 BlogVo
@@ -104,11 +92,11 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
         BlogDao blogDao;
         // 根据博客ID判断是更新现有博客还是创建新博客
         if (blogDto.getId() != null) {
-            blogDao = (BlogDao)redisTemplate.opsForHash().get(cacheBlogInfoKey, blogDto.getId());
+            blogDao = (BlogDao) redisTemplate.opsForHash().get(cacheBlogInfoKey, blogDto.getId().toString());
             if (blogDao == null) {
                 log.info("Redis未找到对应的博客");
                 blogDao = blogMapper.getBlogById(blogDto.getId());
-            }else{
+            } else {
                 log.info("Redis中找到对应的博客");
                 //先删除缓存
                 deleteBlogFromCache(blogDao.getId());
@@ -116,7 +104,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
             //查询用户是否是博客作者
             if (blogDao != null) {
                 log.info("博客已存在，作者是：{}", blogDao.getUserId());
-                Assert.isTrue(blogDao.getUserId().longValue() == ShiroUtil.getProfile().getId().longValue(), "没有权限编辑");
+                Assert.isTrue(Objects.equals(blogDao.getUserId(), ShiroUtil.getProfile().getId()), "没有权限编辑");
                 BeanUtil.copyProperties(blogDto, blogDao, "id", "userId", "created");
                 //修改数据库
                 blogMapper.updateBlog(blogDao);
@@ -134,7 +122,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
             BeanUtil.copyProperties(blogDto, blogDao, "id", "userId", "created");
             //先保存到数据库再修改缓存
             blogMapper.saveBlog(blogDao);
-            pushBlogToRedis(blogDao);
+//            pushBlogToRedis(blogDao);
             return true;
         }
 
@@ -158,8 +146,22 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
     }
 
     @Override
-    public List<Object> queryAllTags() {
+    public List<String> queryAllTags() {
         return blogMapper.queryAllTags();
+    }
+
+    @Override
+    public List<CommentVo> getCommentList(Long blogId, Long parentId) {
+        return blogMapper.getCommentList(blogId, parentId);
+    }
+
+    @Override
+    public void editComment(CommentDto commentDto) {
+        Long userId = ShiroUtil.getProfile().getId();
+        if(!Objects.equals(userId, commentDto.getUserId())){
+            log.info("当前登录id与发表评论id不一致");
+        }
+        blogMapper.editComment(commentDto.getBlogId(), commentDto.getContent(), commentDto.getParentId(),userId);
     }
 
     private IPage<Object> convertListToPage(List<Object> list, Page<BlogVo> page) {
@@ -168,19 +170,19 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, BlogDao> implements
         return cachePage;
     }
 
-    private void saveBlogListToCache(List<BlogDao> records) {
-        redisTemplate.opsForList().rightPushAll(cacheBlogListKey, records);
-    }
+//    private void saveBlogListToCache(List<BlogDao> records) {
+//        records.forEach(blogDao -> redisTemplate.opsForList().rightPush(cacheBlogListKey, blogDao));
+//    }
 
     private void saveBlogInfoToCache(BlogDao blogDao) {
-        redisTemplate.opsForHash().put(cacheBlogInfoKey, blogDao.getId(), blogDao);
+        redisTemplate.opsForHash().put(cacheBlogInfoKey, blogDao.getId().toString(), blogDao);
     }
 
-    private void pushBlogToRedis(BlogDao blogDao) {
-        redisTemplate.opsForList().rightPush(cacheBlogListKey, blogDao);
-    }
+//    private void pushBlogToRedis(BlogDao blogDao) {
+//        redisTemplate.opsForList().rightPush(cacheBlogListKey, blogDao);
+//    }
 
     private void deleteBlogFromCache(Long blogId) {
-        redisTemplate.opsForHash().delete(cacheBlogInfoKey, blogId);
+        redisTemplate.opsForHash().delete(cacheBlogInfoKey, blogId.toString());
     }
 }

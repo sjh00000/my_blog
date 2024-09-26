@@ -4,9 +4,12 @@ package com.blog.sun.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blog.sun.common.dto.BlogDto;
+import com.blog.sun.common.dto.CommentDto;
 import com.blog.sun.common.resp.Result;
 import com.blog.sun.common.vo.BlogVo;
+import com.blog.sun.common.vo.CommentVo;
 import com.blog.sun.service.BlogService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -14,10 +17,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 /**
  * @author sjh
  * @since 2024-05-16
  */
+@Slf4j
 @RestController
 public class BlogController {
     private final BlogService blogService;
@@ -36,6 +41,7 @@ public class BlogController {
         Page<BlogVo> page = new Page<>(currentPage, 10);
         // 调用blogService的page方法进行分页查询，排序方式为按创建时间降序
         IPage<BlogVo> pageData = blogService.getBlogList(page);
+        log.info("pageData:{}",pageData.getRecords());
         return Result.succ(pageData);
     }
 
@@ -71,7 +77,7 @@ public class BlogController {
      * 搜索博客接口。
      * 根据提供的关键词进行模糊搜索，支持分页查询。
      */
-    @GetMapping("/blog/search")
+    @PostMapping("/blog/search")
     public Result searchBlogs(@RequestParam String keyword,
                              @RequestParam(defaultValue = "1") Integer currentPage) {
         // 初始化分页对象，指定当前页码和每页显示的记录数
@@ -92,6 +98,7 @@ public class BlogController {
         Page<BlogVo> page = new Page<>(currentPage, 10);
         IPage<BlogVo> pageData = blogService.queryByLabel(page, label);
         // 返回查询结果
+        log.info("pageData:{}",pageData.getRecords());
         return Result.succ(pageData);
     }
 
@@ -101,9 +108,29 @@ public class BlogController {
     @GetMapping("/blog/tags")
     public Result queryAllTags() {
         // 执行查询，由于只关心标签，不需要分页
-        List<Object> tags = blogService.queryAllTags();
+        List<String> tags = blogService.queryAllTags();
         // 返回所有不重复的标签列表
         return Result.succ(tags);
+    }
+
+    /**
+     * 查询评论列表
+     */
+    @GetMapping("blog/comment")
+    public Result getCommentList(@RequestParam Long blogId,@RequestParam Long parentId) {
+        List<CommentVo> commentList = blogService.getCommentList(blogId, parentId);
+        return Result.succ(commentList);
+    }
+
+    /**
+     * 添加评论
+     */
+    @RequiresAuthentication
+    @GetMapping("blog/comment/edit")
+    public Result editComment(@RequestBody CommentDto commentDto) {
+        // 执行分页查询，并返回查询结果
+        blogService.editComment(commentDto);
+        return Result.succ(null);
     }
 
 }

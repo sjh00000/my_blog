@@ -14,18 +14,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(value = ShiroException.class)
     public Result handler(ShiroException e) {
         log.error("鉴权时异常：----------------{}", e.getMessage());
-        return Result.fail(e.getMessage());
+        return Result.fail(401, "鉴权异常",e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(value = ExpiredCredentialsException.class)
     public Result handler(ExpiredCredentialsException e) {
         log.error("token失效：----------------{}", e.getMessage());
-        return Result.fail(e.getMessage());
+        return Result.fail(401, "token失效",e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
